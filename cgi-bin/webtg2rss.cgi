@@ -2,12 +2,12 @@
 # -*- coding: UTF-8 -*-
 
 import os
-from webtg2rsslib.web2rss import fetch
+from webtg2rsslib.web2rss import fetch, RSS_MEDIA_TYPE
 
 
 def cgi():
     channel = dict(_.split('=') for _ in os.getenv('QUERY_STRING', '').split('&'))['channel']
-    print('Content-Type: text/html; charset=utf-8')
+    print('Content-Type: {}; charset=utf-8'.format(RSS_MEDIA_TYPE))
     print()
     rss_ = fetch(channel)
     print(rss_)

@@ -2,11 +2,15 @@
 # -*- coding: UTF-8 -*-
 
 import os
+import re
 import requests
 from bs4 import BeautifulSoup
 from feedgen.feed import FeedGenerator
 import markdownify
 import markdown
+
+BACKGROUND_IMAGE_PATTERN = re.compile("background-image:url\('(https://.+)'\)")
+RSS_MEDIA_TYPE = 'application/rss+xml'
 
 
 def get_url(channel):
@@ -37,6 +41,26 @@ def fetch(channel, debug=True):
         message_url = widget_message.select_one('.tgme_widget_message_date')['href']
         message_datetime_string = widget_message.select_one('.tgme_widget_message_date .time')['datetime']
 
+        image_obj = widget_message.select_one('.tgme_widget_message_link_preview')
+        if image_obj:
+            preview_image_obj = image_obj.select_one('.link_preview_image')
+            if preview_image_obj:
+                backgroung_image_match = BACKGROUND_IMAGE_PATTERN.search(preview_image_obj['style'])
+                if backgroung_image_match:
+                    message_html += '<a href={0}><img src="{1}"></a>'.format(
+                        image_obj['href'], backgroung_image_match.group(1))
+
+        video_obj = widget_message.select_one('.tgme_widget_message_video_player')
+        if video_obj:
+            preview_video_obj = video_obj.select_one('.tgme_widget_message_video_thumb')
+            if preview_video_obj:
+                backgroung_image_match = BACKGROUND_IMAGE_PATTERN.search(preview_video_obj['style'])
+                if backgroung_image_match:
+                    message_html += '<a href={0}><img src="{1}"></a>'.format(
+                        video_obj['href'], backgroung_image_match.group(1))
+
+
+
         fe = fg.add_entry()
         fe.id(message_url)
         fe.link(href=message_url)
@@ -52,7 +76,7 @@ def fetch(channel, debug=True):
 
 def cgi():
     channel = dict(_.split('=') for _ in os.getenv('QUERY_STRING', '').split('&'))['channel']
-    print('Content-Type: text/html; charset=utf-8')
+    print('Content-Type: {}; charset=utf-8'.format(RSS_MEDIA_TYPE))
     print()
     rss_ = fetch(channel=channel)
     print(rss_)
