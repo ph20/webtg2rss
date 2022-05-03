@@ -34,12 +34,29 @@ def fetch(channel, debug=True):
         fg.subtitle(info_header_title)
 
     for widget_message in soup.select('.tgme_widget_message_wrap'):
+        fe = fg.add_entry()
+
         message_text = widget_message.select_one('.tgme_widget_message_text')
-        # convert html to markdown
+        title_text = ''
+        for line in message_text.get_text('\n').splitlines():
+            title_text += line + ' '
+            if len(line) > 5:
+                break
+        if message_text:
+            fe.title(str(title_text)[:180])
+        else:
+            fe.title('NONE')
+
+        message_url = widget_message.select_one('.tgme_widget_message_date')['href']
+        fe.id(message_url)
+        fe.link(href=message_url)
+
+        message_datetime_string = widget_message.select_one('.tgme_widget_message_date .time')['datetime']
+        fe.pubdate(message_datetime_string)
+
+        # convert html to markdown and then to html for clearing html
         message_md = markdownify.markdownify(str(message_text), heading_style="ATX")
         message_html = markdown.markdown(message_md)
-        message_url = widget_message.select_one('.tgme_widget_message_date')['href']
-        message_datetime_string = widget_message.select_one('.tgme_widget_message_date .time')['datetime']
 
         image_obj = widget_message.select_one('.tgme_widget_message_link_preview')
         if image_obj:
@@ -59,16 +76,6 @@ def fetch(channel, debug=True):
                     message_html += '<a href={0}><img src="{1}"></a>'.format(
                         video_obj['href'], backgroung_image_match.group(1))
 
-
-
-        fe = fg.add_entry()
-        fe.id(message_url)
-        fe.link(href=message_url)
-        fe.pubdate(message_datetime_string)
-        if message_text:
-            fe.title(str(message_text.text)[:120])
-        else:
-            fe.title('NONE')
         fe.content(content=message_html)
 
     return fg.rss_str(pretty=True).decode()
