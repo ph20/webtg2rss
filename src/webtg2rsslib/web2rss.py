@@ -38,11 +38,11 @@ def fetch(channel, debug=True):
 
         message_text = widget_message.select_one('.tgme_widget_message_text')
         title_text = ''
-        for line in message_text.get_text('\n').splitlines():
-            title_text += line + ' '
-            if len(line) > 5:
-                break
         if message_text:
+            for line in message_text.get_text('\n').splitlines():
+                title_text += line + ' '
+                if len(line) > 5:
+                    break
             fe.title(str(title_text)[:180])
         else:
             fe.title('NONE')
