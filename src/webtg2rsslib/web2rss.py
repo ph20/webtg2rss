@@ -8,6 +8,8 @@ from bs4 import BeautifulSoup
 from feedgen.feed import FeedGenerator
 import markdownify
 import markdown
+from datetime import timezone
+from email.utils import format_datetime
 
 BACKGROUND_IMAGE_PATTERN = re.compile("background-image:url\('(https://.+)'\)")
 RSS_MEDIA_TYPE = 'application/rss+xml'
@@ -43,6 +45,7 @@ def fetch(channel):
     page_photo = soup.select_one('.tgme_page_photo_image img')['src']
     fg.logo(page_photo)
     fg.icon(page_photo)
+    last_updated = None
     for widget_message in soup.select('.tgme_widget_message_wrap'):
         fe = fg.add_entry()
 
@@ -63,7 +66,8 @@ def fetch(channel):
 
         message_datetime_string = widget_message.select_one('.tgme_widget_message_date .time')['datetime']
         fe.pubDate(message_datetime_string)
-        fe.updated(message_datetime_string)
+        upd = fe.updated(message_datetime_string)
+        last_updated = max(upd, last_updated or upd)
 
         # convert html to markdown and then to html for clearing html
         message_md = markdownify.markdownify(str(message_text), heading_style="ATX")
@@ -88,8 +92,10 @@ def fetch(channel):
                         video_obj['href'], backgroung_image_match.group(1))
 
         fe.content(content=message_html)
-
-    return "Status: 200 OK", fg.atom_str(pretty=True).decode()
+    if last_updated:
+        fg.updated(last_updated)
+    las_modified = format_datetime(last_updated.replace(tzinfo=timezone.utc), usegmt=True)
+    return "Status: 200 OK\nLast-Modified: {}".format(las_modified), fg.atom_str(pretty=True).decode()
 
 
 def cgi():
