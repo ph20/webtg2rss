@@ -62,7 +62,8 @@ def fetch(channel):
         fe.link(href=message_url)
 
         message_datetime_string = widget_message.select_one('.tgme_widget_message_date .time')['datetime']
-        fe.published(message_datetime_string)
+        fe.pubDate(message_datetime_string)
+        fe.updated(message_datetime_string)
 
         # convert html to markdown and then to html for clearing html
         message_md = markdownify.markdownify(str(message_text), heading_style="ATX")
