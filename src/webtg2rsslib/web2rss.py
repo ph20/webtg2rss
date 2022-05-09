@@ -61,7 +61,7 @@ def fetch(channel):
             fe.title('NONE')
 
         message_url = widget_message.select_one('.tgme_widget_message_date')['href']
-        fe.id(message_url)
+        fe.id(message_url.split('/')[-1])
         fe.link(href=message_url)
 
         message_datetime_string = widget_message.select_one('.tgme_widget_message_date .time')['datetime']
@@ -91,7 +91,7 @@ def fetch(channel):
                     message_html += '<a href={0}><img src="{1}"></a>'.format(
                         video_obj['href'], backgroung_image_match.group(1))
 
-        fe.content(content=message_html)
+        fe.content(content=message_html, type='html')
     if last_updated:
         fg.updated(last_updated)
     las_modified = format_datetime(last_updated.replace(tzinfo=timezone.utc), usegmt=True)
@@ -101,6 +101,7 @@ def fetch(channel):
 def cgi():
     channel = dict(_.split('=') for _ in os.getenv('QUERY_STRING', '').split('&'))['channel']
     print('Content-Type: {}; charset=utf-8'.format(RSS_MEDIA_TYPE))
+    print('Cache-Control: no-cache, private')
     headers, body = fetch(channel=channel)
     if headers:
         print(headers)
