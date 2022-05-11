@@ -88,7 +88,7 @@ def fetch(channel):
             if preview_video_obj:
                 backgroung_image_match = BACKGROUND_IMAGE_PATTERN.search(preview_video_obj['style'])
                 if backgroung_image_match:
-                    message_html += '<a href={0}><img src="{1} style="max-height: 180px;""></a>'.format(
+                    message_html += '<a href={0}><img src="{1}" style="max-height: 180px;""></a>'.format(
                         video_obj['href'], backgroung_image_match.group(1))
 
         image_group_obj = widget_message.select_one('.tgme_widget_message_grouped_layer')
