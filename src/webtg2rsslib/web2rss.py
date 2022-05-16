@@ -73,6 +73,13 @@ def fetch(channel):
         message_md = markdownify.markdownify(str(message_text), heading_style="ATX")
         message_html = markdown.markdown(message_md)
 
+        # Author(s)
+        owner_name_obj = widget_message.select_one('a.tgme_widget_message_owner_name')
+        fe.author(name=owner_name_obj.text, uri=owner_name_obj['href'])
+        forwarded_from_name_obj = widget_message.select_one('a.tgme_widget_message_forwarded_from_name')
+        if forwarded_from_name_obj:
+            fe.author(name=forwarded_from_name_obj.text, uri=forwarded_from_name_obj['href'])
+
         image_obj = widget_message.select_one('.tgme_widget_message_link_preview')
         if image_obj:
             preview_image_obj = image_obj.select_one('.link_preview_image')
