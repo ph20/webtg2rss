@@ -11,17 +11,19 @@ import markdown
 from datetime import timezone
 from email.utils import format_datetime
 
-BACKGROUND_IMAGE_PATTERN = re.compile("background-image:url\('(https://.+)'\)")
 RSS_MEDIA_TYPE = 'application/rss+xml'
-TME_URL = 'https://t.me'
+TME_BASE_URL = 'https://t.me'
+
+BACKGROUND_IMAGE_PATTERN = re.compile(r"background-image:url\('(https://.+)'\)")
+TM_URL_PATTERN = re.compile(r'({})/(.+)/(\d+)'.format(TME_BASE_URL))
 
 
 def get_s_url(channel):
-    return '{site}/s/{channel}/'.format(site=TME_URL, channel=channel)
+    return '{site}/s/{channel}/'.format(site=TME_BASE_URL, channel=channel)
 
 
 def get_url(channel):
-    return '{site}/{channel}/'.format(site=TME_URL, channel=channel)
+    return '{site}/{channel}/'.format(site=TME_BASE_URL, channel=channel)
 
 
 def fetch(channel):
@@ -61,8 +63,11 @@ def fetch(channel):
             fe.title('NONE')
 
         message_url = widget_message.select_one('.tgme_widget_message_date')['href']
-        fe.id(message_url.split('/')[-1])
-        fe.link(href=message_url)
+        url_matched = TM_URL_PATTERN.search(message_url)
+        if url_matched:
+            url_base, url_channel, url_id = url_matched.group(1, 2, 3)
+            fe.id(url_id)
+            fe.link(href='/'.join([url_base, 's', url_channel, url_id]))
 
         message_datetime_string = widget_message.select_one('.tgme_widget_message_date .time')['datetime']
         fe.pubDate(message_datetime_string)
