@@ -14,7 +14,6 @@ from email.utils import format_datetime
 RSS_MEDIA_TYPE = 'application/rss+xml'
 TME_BASE_URL = 'https://t.me'
 
-BACKGROUND_IMAGE_PATTERN = re.compile(r"background-image:url\('(https://.+)'\)")
 TM_URL_PATTERN = re.compile(r'({})/(.+)/(\d+)'.format(TME_BASE_URL))
 
 
@@ -24,6 +23,30 @@ def get_s_url(channel):
 
 def get_url(channel):
     return '{site}/{channel}/'.format(site=TME_BASE_URL, channel=channel)
+
+
+def parse_style(style: str):
+    return {_.split(":")[0].strip(): _.split(":", maxsplit=1)[1].strip() for _ in style.split(";") if ':' in _}
+
+
+def strip_wrap(string, startswith, endswith):
+    if string.startswith(startswith) and string.endswith(endswith):
+        string = string[len(startswith):-len(endswith)]
+    return string
+
+
+def extract_url(background_image: str):
+    """
+    >>> 'url("https://google.com/image.jpg")'
+    "https://google.com/image.jpg"
+    :param background_image:
+    :return:
+    """
+    wrap = (('url(', ')'), ('"', '"'), ("'",  "'"))
+    url = background_image
+    for startswith, endswith in wrap:
+        url = strip_wrap(url, startswith, endswith)
+    return url
 
 
 def fetch(channel):
@@ -89,28 +112,28 @@ def fetch(channel):
         if image_obj:
             preview_image_obj = image_obj.select_one('.link_preview_image')
             if preview_image_obj:
-                backgroung_image_match = BACKGROUND_IMAGE_PATTERN.search(preview_image_obj['style'])
-                if backgroung_image_match:
+                background_image_url = extract_url(parse_style(preview_image_obj['style'])['background-image'])
+                if background_image_url.startswith('https://'):
                     message_html += '<a href={0}><img src="{1}" style="max-height: 180px;"></a>'.format(
-                        image_obj['href'], backgroung_image_match.group(1))
+                        image_obj['href'], background_image_url)
 
         video_obj = widget_message.select_one('.tgme_widget_message_video_player')
         if video_obj:
             preview_video_obj = video_obj.select_one('.tgme_widget_message_video_thumb')
             if preview_video_obj:
-                backgroung_image_match = BACKGROUND_IMAGE_PATTERN.search(preview_video_obj['style'])
-                if backgroung_image_match:
+                background_image_url = extract_url(parse_style(preview_video_obj['style'])['background-image'])
+                if background_image_url.startswith('https://'):
                     message_html += '<a href={0}><img src="{1}" style="max-height: 180px;""></a>'.format(
-                        video_obj['href'], backgroung_image_match.group(1))
+                        video_obj['href'], background_image_url)
 
         image_group_obj = widget_message.select_one('.tgme_widget_message_grouped_layer')
         if image_group_obj:
             for preview_img_obj in image_group_obj.select('a.tgme_widget_message_photo_wrap'):
                 if preview_img_obj:
-                    backgroung_group_image_match = BACKGROUND_IMAGE_PATTERN.search(preview_img_obj['style'])
-                    if backgroung_group_image_match:
+                    background_image_url = extract_url(parse_style(preview_img_obj['style'])['background-image'])
+                    if background_image_url.startswith('https://'):
                         message_html += '<a href={0}><img src="{1}" style="max-height: 180px; display: inline-block;"></a>'.format(
-                            preview_img_obj['href'], backgroung_group_image_match.group(1))
+                            preview_img_obj['href'], background_image_url)
 
         fe.content(content=message_html, type='html')
     if last_updated:
